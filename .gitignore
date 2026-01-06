@@ -124,3 +124,12 @@ docker/payment
 vendor/**
 !vendor/manifest
 coverage.out
+
+# Go binaries
+/paymentsvc
+
+# Build artifacts
+*.md.tmp
+BUILD_SCRIPT_FIX.md
+METRICS_FIX.md
+UPGRADE_SUMMARY.md

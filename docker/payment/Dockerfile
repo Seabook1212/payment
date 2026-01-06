@@ -1,13 +1,15 @@
-FROM golang:1.7
+FROM golang:1.22-alpine AS builder
 
-COPY . /go/src/github.com/microservices-demo/payment/
+WORKDIR /build
 
-RUN go get -u github.com/FiloSottile/gvt
-RUN cd /go/src/github.com/microservices-demo/payment/ && gvt restore
+COPY go.mod go.sum* ./
+RUN go mod download
 
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o /app github.com/microservices-demo/payment/cmd/paymentsvc
+COPY . .
 
-FROM alpine:3.4
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -ldflags="-w -s" -o /app ./cmd/paymentsvc
+
+FROM alpine:3.19
 
 WORKDIR /
 COPY --from=0 /app /app
@@ -26,8 +28,6 @@ RUN	apk add --no-cache libcap && \
 
 USER ${SERVICE_USER}
 
-# CMD ["/app", "-port=8080"]
 CMD ["/app", "-port=80"]
-# EXPOSE 8080
 EXPOSE 80
 # weaveworksdemos/payment:0.4.3

@@ -22,14 +22,13 @@ fi
 CODE_DIR=$(cd $SCRIPT_DIR/..; pwd)
 echo $CODE_DIR
 
-cp -r $CODE_DIR/cmd/ $CODE_DIR/docker/payment/cmd/
-cp $CODE_DIR/*.go $CODE_DIR/docker/payment/
-mkdir $CODE_DIR/docker/payment/vendor && cp $CODE_DIR/vendor/manifest $CODE_DIR/docker/payment/vendor/
-
 REPO=${GROUP}/$(basename payment);
 
-$DOCKER_CMD build -t ${REPO}-dev -f $CODE_DIR/docker/payment/Dockerfile $CODE_DIR/docker/payment;
-$DOCKER_CMD create --name payment ${REPO}-dev;
-$DOCKER_CMD cp payment:/app $CODE_DIR/docker/payment/app;
-$DOCKER_CMD rm payment;
-$DOCKER_CMD build -t ${REPO}:${COMMIT} -f $CODE_DIR/docker/payment/Dockerfile-release $CODE_DIR/docker/payment;
+# Modern build using multi-stage Dockerfile directly from project root
+# No need to copy files - Dockerfile handles everything
+$DOCKER_CMD build -t ${REPO}:${COMMIT} -f $CODE_DIR/docker/payment/Dockerfile $CODE_DIR
+
+# Also tag as latest for convenience
+$DOCKER_CMD tag ${REPO}:${COMMIT} ${REPO}:latest
+
+echo "Successfully built ${REPO}:${COMMIT}"

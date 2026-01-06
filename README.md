@@ -48,7 +48,7 @@ If you followed to Go build instructions, you should have a "payment" binary in 
 To run it use:
 ```
 ./payment
-ts=2016-12-14T11:48:58Z caller=main.go:29 transport=HTTP port=8080
+ts=2016-12-14T11:48:58Z caller=main.go:29 transport=HTTP port=80
 ```
 
 #### Using Docker Compose

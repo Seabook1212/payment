@@ -1,21 +1,20 @@
 package payment
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 
-	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/circuitbreaker"
-	"github.com/go-kit/kit/tracing/opentracing"
+	"github.com/go-kit/kit/log"
 	httptransport "github.com/go-kit/kit/transport/http"
 	"github.com/gorilla/mux"
 	stdopentracing "github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-        "github.com/streadway/handy/breaker"
-	"golang.org/x/net/context"
+	"github.com/streadway/handy/breaker"
 )
 
 // MakeHTTPHandler mounts the endpoints into a REST-y HTTP handler.
@@ -27,18 +26,16 @@ func MakeHTTPHandler(ctx context.Context, e Endpoints, logger log.Logger, tracer
 	}
 
 	r.Methods("POST").Path("/paymentAuth").Handler(httptransport.NewServer(
-		ctx,
 		circuitbreaker.HandyBreaker(breaker.NewBreaker(0.2))(e.AuthoriseEndpoint),
 		decodeAuthoriseRequest,
 		encodeAuthoriseResponse,
-		append(options, httptransport.ServerBefore(opentracing.FromHTTPRequest(tracer, "POST /paymentAuth", logger)))...,
+		options...,
 	))
 	r.Methods("GET").Path("/health").Handler(httptransport.NewServer(
-		ctx,
 		circuitbreaker.HandyBreaker(breaker.NewBreaker(0.2))(e.HealthEndpoint),
 		decodeHealthRequest,
 		encodeHealthResponse,
-		append(options, httptransport.ServerBefore(opentracing.FromHTTPRequest(tracer, "GET /health", logger)))...,
+		options...,
 	))
 	r.Handle("/metrics", promhttp.Handler())
 	return r
@@ -60,7 +57,7 @@ func decodeAuthoriseRequest(_ context.Context, r *http.Request) (interface{}, er
 	var bodyBytes []byte
 	if r.Body != nil {
 		var err error
-		bodyBytes, err = ioutil.ReadAll(r.Body)
+		bodyBytes, err = io.ReadAll(r.Body)
 		if err != nil {
 			return nil, err
 		}
