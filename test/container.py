@@ -11,7 +11,7 @@ from util.Dredd import Dredd
 
 class PaymentContainerTest(unittest.TestCase):
     TAG = "latest"
-    PORT = "8080"
+    PORT = "80"
 
     container_name = Docker().random_container_name('payment')
 

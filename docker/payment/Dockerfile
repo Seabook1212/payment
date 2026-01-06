@@ -17,13 +17,17 @@ ENV	SERVICE_USER=myuser \
 	SERVICE_GROUP=mygroup \
 	SERVICE_GID=10001
 
-RUN	addgroup -g ${SERVICE_GID} ${SERVICE_GROUP} && \
+RUN	apk add --no-cache libcap && \
+	addgroup -g ${SERVICE_GID} ${SERVICE_GROUP} && \
 	adduser -g "${SERVICE_NAME} user" -D -H -G ${SERVICE_GROUP} -s /sbin/nologin -u ${SERVICE_UID} ${SERVICE_USER} && \
 	chmod +x /app && \
-    chown -R ${SERVICE_USER}:${SERVICE_GROUP} /app
+    chown -R ${SERVICE_USER}:${SERVICE_GROUP} /app && \
+	setcap 'cap_net_bind_service=+ep' /app
 
 USER ${SERVICE_USER}
 
-CMD ["/app", "-port=8080"]
-
-EXPOSE 8080
+# CMD ["/app", "-port=8080"]
+CMD ["/app", "-port=80"]
+# EXPOSE 8080
+EXPOSE 80
+# weaveworksdemos/payment:0.4.3
