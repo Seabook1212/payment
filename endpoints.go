@@ -19,7 +19,7 @@ type Endpoints struct {
 func MakeEndpoints(s Service, tracer stdopentracing.Tracer) Endpoints {
 	return Endpoints{
 		AuthoriseEndpoint: opentracing.TraceServer(tracer, "POST /paymentAuth")(MakeAuthoriseEndpoint(s)),
-		HealthEndpoint:    opentracing.TraceServer(tracer, "GET /health")(MakeHealthEndpoint(s)),
+		HealthEndpoint:    MakeHealthEndpoint(s), // No tracing for health checks
 	}
 }
 
@@ -37,12 +37,9 @@ func MakeAuthoriseEndpoint(s Service) endpoint.Endpoint {
 }
 
 // MakeHealthEndpoint returns current health of the given service.
+// Health checks are not traced to reduce noise in tracing systems.
 func MakeHealthEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-		var span stdopentracing.Span
-		span, ctx = stdopentracing.StartSpanFromContext(ctx, "health check")
-		span.SetTag("service", "payment")
-		defer span.Finish()
 		health := s.Health()
 		return healthResponse{Health: health}, nil
 	}

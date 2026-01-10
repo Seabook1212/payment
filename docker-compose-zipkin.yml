@@ -12,7 +12,7 @@ services:
     read_only: true
     environment:
       - reschedule=on-node-failure
-      - ZIPKIN=http://zipkin:9411/api/v1/spans
+      - ZIPKIN=http://${zipkin_host:jaeger-collector.observability.svc.cluster.local}:9411/api/v2/spans
     ports:
       - "8082:80"
   zipkin:

@@ -1,8 +1,9 @@
 package payment
 
 import (
-	"github.com/go-kit/kit/log"
 	"time"
+
+	"github.com/go-kit/kit/log"
 )
 
 // LoggingMiddleware logs method calls, parameters, results, and elapsed time.
@@ -32,12 +33,12 @@ func (mw loggingMiddleware) Authorise(amount float32) (auth Authorisation, err e
 }
 
 func (mw loggingMiddleware) Health() (health []Health) {
-	defer func(begin time.Time) {
-		mw.logger.Log(
-			"method", "Health",
-			"result", len(health),
-			"took", time.Since(begin),
-		)
-	}(time.Now())
+	// defer func(begin time.Time) {
+	// 	mw.logger.Log(
+	// 		"method", "Health",
+	// 		"result", len(health),
+	// 		"took", time.Since(begin),
+	// 	)
+	// }(time.Now())
 	return mw.next.Health()
 }
