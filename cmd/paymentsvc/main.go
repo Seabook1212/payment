@@ -14,9 +14,9 @@ import (
 	"github.com/go-kit/kit/log"
 	"github.com/microservices-demo/payment"
 	stdopentracing "github.com/opentracing/opentracing-go"
+	zipkintracer "github.com/openzipkin-contrib/zipkin-go-opentracing"
 	"github.com/openzipkin/zipkin-go"
 	zipkinhttp "github.com/openzipkin/zipkin-go/reporter/http"
-	zipkintracer "github.com/openzipkin-contrib/zipkin-go-opentracing"
 )
 
 const (

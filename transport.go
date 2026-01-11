@@ -10,6 +10,7 @@ import (
 
 	"github.com/go-kit/kit/circuitbreaker"
 	"github.com/go-kit/kit/log"
+	"github.com/go-kit/kit/tracing/opentracing"
 	httptransport "github.com/go-kit/kit/transport/http"
 	"github.com/gorilla/mux"
 	stdopentracing "github.com/opentracing/opentracing-go"
@@ -29,7 +30,7 @@ func MakeHTTPHandler(ctx context.Context, e Endpoints, logger log.Logger, tracer
 		circuitbreaker.HandyBreaker(breaker.NewBreaker(0.2))(e.AuthoriseEndpoint),
 		decodeAuthoriseRequest,
 		encodeAuthoriseResponse,
-		options...,
+		append(options, httptransport.ServerBefore(opentracing.HTTPToContext(tracer, "POST /paymentAuth", logger)))...,
 	))
 	r.Methods("GET").Path("/health").Handler(httptransport.NewServer(
 		circuitbreaker.HandyBreaker(breaker.NewBreaker(0.2))(e.HealthEndpoint),
