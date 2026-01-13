@@ -56,11 +56,11 @@ func WireUp(ctx context.Context, declineAmount float32, tracer stdopentracing.Tr
 	var service Service
 	{
 		service = NewAuthorisationService(declineAmount)
-		service = LoggingMiddleware(logger)(service)
+		// Removed service-level logging - now done at endpoint level with trace context
 	}
 
 	// Endpoint domain.
-	endpoints := MakeEndpoints(service, tracer)
+	endpoints := MakeEndpoints(service, tracer, logger)
 
 	router := MakeHTTPHandler(ctx, endpoints, logger, tracer)
 
