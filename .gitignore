@@ -133,3 +133,4 @@ coverage.out
 BUILD_SCRIPT_FIX.md
 METRICS_FIX.md
 UPGRADE_SUMMARY.md
+.gocache/**

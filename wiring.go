@@ -50,6 +50,7 @@ func WireUp(ctx context.Context, declineAmount float32, tracer stdopentracing.Tr
 		logger = log.NewLogfmtLogger(os.Stderr)
 		logger = log.With(logger, "ts", log.DefaultTimestampUTC)
 		logger = log.With(logger, "caller", log.DefaultCaller)
+		logger = log.With(logger, "service", serviceName)
 	}
 
 	// Service domain.
