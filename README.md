@@ -179,9 +179,3 @@ COMMIT=test make test
 - `docker-compose.yml`: local service deployment on port `8082`.
 - `docker-compose-zipkin.yml`: optional Zipkin deployment overlay.
 - `test/`: legacy Dredd/container integration test harness.
-
-## Paper Context
-
-In EviRCA, the enhanced Sock Shop benchmark provides synchronized metrics, logs, traces, topology, Chaos Mesh fault injection artifacts, upgraded service implementations, and fine-grained labels. This repository is the upgraded `payment` service implementation used as part of that benchmark platform.
-
-For reproducible RCA experiments, this service is intended to run together with the other enhanced Sock Shop services and the benchmark telemetry collection pipeline.
