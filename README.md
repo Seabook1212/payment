@@ -1,83 +1,187 @@
-# Payment
-[![Build Status](https://travis-ci.org/microservices-demo/payment.svg?branch=master)](https://travis-ci.org/microservices-demo/payment)
-[![Coverage Status](https://coveralls.io/repos/github/microservices-demo/payment/badge.svg?branch=master)](https://coveralls.io/github/microservices-demo/payment?branch=master)
-[![Go Report Card](https://goreportcard.com/badge/github.com/microservices-demo/user)](https://goreportcard.com/report/github.com/microservices-demo/user)
-[![](https://images.microbadger.com/badges/image/weaveworksdemos/payment.svg)](http://microbadger.com/images/weaveworksdemos/payment "Get your own image badge on microbadger.com")
+# Payment Service
 
-A microservices-demo service that provides payment services.
-This build is built, tested and released by travis.
+This repository contains the `payment` service used by the enhanced Sock Shop benchmark for the paper:
 
-## Bugs, Feature Requests and Contributing
-We'd love to see community contributions. We like to keep it simple and use Github issues to track bugs and feature requests and pull requests to manage contributions.
+> EviRCA: An Evidence-Aware Skill-Based LLM Agent and a Telemetry-Rich Multi-Modal Benchmark for Microservice Root Cause Analysis
 
-## API Spec
+The service is derived from the original Sock Shop payment microservice and has been modernized for reproducible microservice RCA experiments. In the benchmark, `payment` is one of the Go services, together with `catalogue` and `user`, migrated to Go 1.22 and Go Modules with improved runtime configuration, Prometheus metrics, trace-aware logging, and Zipkin/OpenTracing instrumentation.
 
-Checkout the API Spec [here](http://microservices-demo.github.io/api/index?url=https://raw.githubusercontent.com/microservices-demo/payment/master/api-spec/payment.json)
+## Role in Enhanced Sock Shop
+
+`payment` authorizes checkout payments for Sock Shop. It exposes a small HTTP API, but it is instrumented so that benchmark runs can collect synchronized metrics, logs, and traces for service-level, pod-level, and entity-fault RCA.
+
+Key benchmark-oriented changes include:
+
+- Go 1.22 module-based build instead of the legacy GOPATH/gvt workflow.
+- Prometheus HTTP metrics for request duration, in-flight requests, request body size, and response body size.
+- Zipkin/OpenTracing spans for incoming `/paymentAuth` requests and the internal authorization operation.
+- Kubernetes metadata tags on spans from `CONTAINER_NAME`, `POD_NAME`, `POD_NAMESPACE`, and `NODE_NAME`.
+- Trace-aware structured logs with trace ID, span ID, operation, target, error type, and latency fields.
+- Reduced observability noise by excluding `/health` from tracing and service-level request logging.
+- Clearer validation and transport error classification for RCA-friendly log and span evidence.
+
+## API
+
+### `GET /health`
+
+Returns the service health state.
+
+```bash
+curl http://localhost:8082/health
+```
+
+Example response:
+
+```json
+{
+  "health": [
+    {
+      "service": "payment",
+      "status": "OK",
+      "time": "2026-07-07 12:00:00 +0000 UTC"
+    }
+  ]
+}
+```
+
+### `POST /paymentAuth`
+
+Authorizes a payment amount.
+
+```bash
+curl -H "Content-Type: application/json" \
+  -X POST \
+  -d '{"amount":40}' \
+  http://localhost:8082/paymentAuth
+```
+
+Example response:
+
+```json
+{
+  "authorised": true,
+  "message": "Payment authorised"
+}
+```
+
+Payments are declined when the amount exceeds the configured decline threshold. Zero, negative, missing, or invalid amounts are treated as validation errors.
+
+### `GET /metrics`
+
+Exposes Prometheus metrics.
+
+```bash
+curl http://localhost:8082/metrics
+```
+
+Representative metrics include:
+
+- `http_request_duration_seconds`
+- `http_inflight_requests`
+- `http_request_body_size_bytes`
+- `http_response_body_size_bytes`
+
+## Configuration
+
+The service binary is `cmd/paymentsvc`.
+
+| Option | Default | Description |
+| --- | --- | --- |
+| `-port` | `80` | HTTP listen port. |
+| `-decline` | `100000000` | Decline payments over this amount. |
+| `-zipkin` | resolved from environment | Zipkin collector base URL. Empty disables tracing. |
+
+Zipkin address resolution uses the first non-empty value from:
+
+1. `ZIPKIN`
+2. `ZIPKIN_BASE_URL`
+3. `http://${ZIPKIN_HOST}:${ZIPKIN_PORT}`
+
+If none are set, the default is:
+
+```text
+http://jaeger-collector.observability.svc.cluster.local:9411
+```
+
+Span metadata can be enriched with Kubernetes runtime context:
+
+| Environment variable | Span tag |
+| --- | --- |
+| `CONTAINER_NAME` | `container` |
+| `POD_NAME` | `pod` |
+| `POD_NAMESPACE` | `namespace` |
+| `NODE_NAME` | `node` |
 
 ## Build
 
-#### Dependencies
-```
-cd $GOPATH/src/github.com/microservices-demo/payment/
-go get -u github.com/FiloSottile/gvt
-gvt restore
+```bash
+go build -o payment ./cmd/paymentsvc
 ```
 
-#### Using native Go tools
-In order to build the project locally you need to make sure that the repository directory is located in the correct
-$GOPATH directory: $GOPATH/src/github.com/microservices-demo/payment/. Once that is in place you can build by running:
+## Run Locally
 
+Tracing can be disabled by passing an empty Zipkin address.
+
+```bash
+./payment -port 8082 -zipkin ""
 ```
-cd $GOPATH/src/github.com/microservices-demo/payment/paymentsvc/
-go build -o payment
+
+Then call:
+
+```bash
+curl http://localhost:8082/health
+curl -H "Content-Type: application/json" -d '{"amount":40}' http://localhost:8082/paymentAuth
+curl http://localhost:8082/metrics
 ```
 
-The result is a binary named `payment`, in the current directory.
+## Run with Docker Compose
 
-#### Using Docker Compose
-`docker-compose build`
+```bash
+docker-compose up --build
+```
+
+The service is exposed at:
+
+```text
+http://localhost:8082
+```
+
+To run with Zipkin support:
+
+```bash
+docker-compose -f docker-compose.yml -f docker-compose-zipkin.yml up --build
+```
 
 ## Test
-`COMMIT=test make test`
 
-## Run 
+Run the Go test suite:
 
-#### Using Go native
-
-If you followed to Go build instructions, you should have a "payment" binary in $GOPATH/src/github.com/microservices-demo/payment/cmd/paymentsvc/.
-To run it use:
-```
-./payment
-ts=2016-12-14T11:48:58Z caller=main.go:29 transport=HTTP port=80
+```bash
+go test ./...
 ```
 
-#### Using Docker Compose
+The tests cover authorization behavior, HTTP transport behavior, trace propagation, trace tags, and main package runtime helpers.
 
-If you used Docker Compose to build the payment project, the result should be a Docker image called `weaveworksdemos/payment`.
-To run it use:
-```
-docker-compose up
-```
+The legacy container test flow is still available when Docker is configured:
 
-You can now access the service via http://localhost:8082
-
-## Check
-
-You can check the health of the service by doing a GET request to the health endpoint:
-
-```
-curl http://localhost:8082/health
-{"health":[{"service":"payment","status":"OK","time":"2016-12-14 12:22:04.716316395 +0000 UTC"}]}
+```bash
+COMMIT=test make test
 ```
 
-## Use
+## Repository Contents
 
-You can authorise a payment by POSTing to the paymentAuth endpoint:
+- `cmd/paymentsvc/`: service entrypoint and runtime configuration.
+- `service.go`: payment authorization domain logic.
+- `endpoints.go`: Go kit endpoints, trace spans, trace metadata, and endpoint logging.
+- `transport.go`: HTTP routing, JSON encoding/decoding, error handling, and `/metrics`.
+- `wiring.go`: service wiring and Prometheus middleware.
+- `api-spec/payment.json`: Swagger 2.0 API specification.
+- `docker-compose.yml`: local service deployment on port `8082`.
+- `docker-compose-zipkin.yml`: optional Zipkin deployment overlay.
+- `test/`: legacy Dredd/container integration test harness.
 
-```
-curl -H "Content-Type: application/json" -X POST -d'{"Amount":40}'  http://localhost:8082/paymentAuth
-{"authorised":true}
-```
+## Paper Context
 
-## Push
-`GROUP=weaveworksdemos COMMIT=test ./scripts/push.sh`
+In EviRCA, the enhanced Sock Shop benchmark provides synchronized metrics, logs, traces, topology, Chaos Mesh fault injection artifacts, upgraded service implementations, and fine-grained labels. This repository is the upgraded `payment` service implementation used as part of that benchmark platform.
+
+For reproducible RCA experiments, this service is intended to run together with the other enhanced Sock Shop services and the benchmark telemetry collection pipeline.

@@ -14,7 +14,7 @@ import (
 func TestHTTPServerSpanIncludesMethodStatusAndURLTags(t *testing.T) {
 	tracer := mocktracer.New()
 	logger := log.NewNopLogger()
-	service := NewAuthorisationService(10000)
+	service := NewAuthorisationService(100000000)
 	endpoints := MakeEndpoints(service, tracer, logger)
 	handler := MakeHTTPHandler(context.Background(), endpoints, logger, tracer)
 

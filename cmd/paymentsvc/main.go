@@ -64,7 +64,7 @@ func main() {
 	var (
 		port          = flag.String("port", "80", "Port to bind HTTP listener")
 		zip           = flag.String("zipkin", resolveZipkinAddressFromEnv(), "Zipkin address")
-		declineAmount = flag.Float64("decline", 10000, "Decline payments over certain amount")
+		declineAmount = flag.Float64("decline", 100000000, "Decline payments over certain amount")
 	)
 	flag.Parse()
 

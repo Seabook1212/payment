@@ -36,7 +36,7 @@ func TestPaymentSpansJoinUpstreamTrace(t *testing.T) {
 	tracer.Reset()
 
 	endpoint := serverTraceEndpointMiddleware(tracer, "POST /paymentAuth")(
-		MakeAuthoriseEndpoint(NewAuthorisationService(10000), tracer),
+		MakeAuthoriseEndpoint(NewAuthorisationService(100000000), tracer),
 	)
 
 	response, err := endpoint(ctx, AuthoriseRequest{Amount: 10})
